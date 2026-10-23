@@ -1,7 +1,10 @@
-# Invitation layout refinement
-- [x] Use green and white only and remove plants, flowers, and emblems from the automatic curtain opening.
-- [x] Bring details closer, enlarge lettering, and align floral artwork symmetrically.
-- [ ] Restore the beautiful white curtain opening, dressed with gypsophila garlands and ribbon sprays (no texts, no names on the curtain).
-- [ ] Shorten the opening timing, make the curtain fade out cleanly, refine petal/flower rain colors.
-- [ ] Add more florals at the top, extend the page with wish + closing sections, refine inside animations.
-- [ ] Verify opening and layout across phone, tablet, desktop, and reduced-motion settings.
+# Invitation roadmap
+
+- [x] Green-and-white invitation, curtain opening dressed with gypsophila garlands and ribbon sprays (no texts on the curtain).
+- [x] Faster opening: ~2s total (was ~5s) — shorter pause, compressed timeline, clean fade-out.
+- [x] Richer curtain: drifting silk pleats, center swag, deeper dressing.
+- [x] Interactive three-tier cake: candles light one by one on scroll, flames flicker with halos, smoke wisps.
+- [x] Blow-out: real breath via microphone plus tap fallback; confetti burst and birthday wish when all candles are out; relight button.
+- [x] Balloons drifting up the page in the green/white palette.
+- [x] Petal + gypsophila rain, floral sections, venue map button, closing.
+- [x] Verified: build, routing test, curtain speed, candle light/relight, blow-out + confetti in the live preview.
