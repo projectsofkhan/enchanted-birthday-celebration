@@ -243,6 +243,23 @@ html { scrollbar-color: var(--wed-green) var(--wed-white); scrollbar-width: thin
   inset: 0;
   background: linear-gradient(180deg, color-mix(in oklab, var(--wed-green) 12%, transparent), transparent 30%, transparent 70%, color-mix(in oklab, var(--wed-silk-shadow) 40%, transparent));
 }
+/* Soft pleats that drift like real silk folds. */
+.curtain-folds {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-image: repeating-linear-gradient(90deg,
+    color-mix(in oklab, var(--wed-green) 0%, transparent) 0px,
+    color-mix(in oklab, var(--wed-silk-deep) 26%, transparent) 14px,
+    color-mix(in oklab, var(--wed-white) 92%, transparent) 34px,
+    color-mix(in oklab, var(--wed-silk-deep) 22%, transparent) 56px,
+    color-mix(in oklab, var(--wed-green) 0%, transparent) 72px);
+  mix-blend-mode: multiply;
+  opacity: .55;
+  animation: folds-drift 7s ease-in-out infinite alternate;
+}
+.curtain-right .curtain-folds { animation-delay: -3.5s; }
+@keyframes folds-drift { from { background-position: 0 0; } to { background-position: 46px 0; } }
 .curtain-left { left: 0; transform-origin: left top; border-right: 3px double var(--wed-green); }
 .curtain-right { right: 0; transform-origin: right top; border-left: 3px double var(--wed-green); }
 .curtain-silk { position: absolute; inset: 0; background: var(--gradient-silk-shine); background-size: 200% 100%; animation: silk-shimmer 4.5s ease-in-out infinite alternate; }
@@ -253,6 +270,7 @@ html { scrollbar-color: var(--wed-green) var(--wed-white); scrollbar-width: thin
 .valance-swag { position: absolute; top: -130px; width: 53%; height: 270px; background: var(--gradient-ivory-silk); border-radius: 0 0 50% 50%; border-bottom: 5px double var(--wed-green); box-shadow: var(--shadow-soft); }
 .swag-left { left: -3%; transform: rotate(-7deg); }
 .swag-right { right: -3%; transform: rotate(7deg); }
+.swag-center { left: 30%; width: 40%; height: 250px; top: -148px; border-bottom-width: 4px; transform: none; box-shadow: 0 10px 22px -12px color-mix(in oklab, var(--wed-green) 30%, transparent); }
 .curtain-rope { position: absolute; width: 90%; height: 55%; top: 5%; border-bottom: 6px double var(--wed-green); border-radius: 0 0 50% 50%; z-index: 2; }
 .curtain-left .curtain-rope { left: -50%; transform: rotate(-15deg); }
 .curtain-right .curtain-rope { right: -50%; transform: rotate(15deg); }
