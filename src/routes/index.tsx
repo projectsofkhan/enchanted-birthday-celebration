@@ -56,6 +56,220 @@ function Rain() {
   );
 }
 
+type Bal = { l: number; d: number; dl: number; s: number; k: number; sw: number };
+
+function Balloons() {
+  const [bals, setBals] = useState<Bal[]>([]);
+  useEffect(() => {
+    setBals(Array.from({ length: 9 }, (_, i) => ({
+      l: i % 2 === 0 ? 2 + Math.random() * 16 : 80 + Math.random() * 16,
+      d: 15 + Math.random() * 13,
+      dl: -Math.random() * 24,
+      s: 0.55 + Math.random() * 0.75,
+      k: i % 3,
+      sw: (Math.random() * 10 - 5),
+    })));
+  }, []);
+  return (
+    <div className="balloon-sky" aria-hidden="true">
+      {bals.map((b, i) => (
+        <span
+          key={i}
+          className={`balloon balloon-v${b.k}`}
+          style={{
+            left: `${b.l}%`,
+            animationDuration: `${b.d}s`,
+            animationDelay: `${b.dl}s`,
+            scale: `${b.s}`,
+            "--sway": `${b.sw}deg`,
+          } as React.CSSProperties}
+        >
+          <i className="balloon-string" />
+        </span>
+      ))}
+    </div>
+  );
+}
+
+const CANDLE_COUNT = 5;
+type Puff = { id: number; side: number };
+
+function Cake() {
+  const [lit, setLit] = useState<boolean[]>(() => Array(CANDLE_COUNT).fill(false));
+  const [wishMade, setWishMade] = useState(false);
+  const [puffs, setPuffs] = useState<Puff[]>([]);
+  const [confetti, setConfetti] = useState<{ l: number; d: number; dl: number; r: number; k: number }[]>([]);
+  const [micState, setMicState] = useState<"off" | "on" | "denied">("off");
+  const [micHint, setMicHint] = useState("");
+  const rootRef = useRef<HTMLElement>(null);
+  const litRef = useRef(lit);
+  const puffId = useRef(0);
+  const audioRef = useRef<{ ctx: AudioContext; stream: MediaStream; raf: number } | null>(null);
+  const lastBlowAt = useRef(0);
+  litRef.current = lit;
+
+  // Candles light themselves one by one when the cake scrolls into view.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const io = new IntersectionObserver((entries) => {
+      if (!entries.some(e => e.isIntersecting)) return;
+      io.disconnect();
+      for (let i = 0; i < CANDLE_COUNT; i++) {
+        timers.push(setTimeout(() => setLit(prev => prev.map((v, j) => (j === i ? true : v))), 350 + i * 320));
+      }
+    }, { threshold: 0.45 });
+    io.observe(root);
+    return () => {
+      io.disconnect();
+      timers.forEach(clearTimeout);
+    };
+  }, []);
+
+  const burstConfetti = () => {
+    setConfetti(Array.from({ length: 70 }, () => ({
+      l: 8 + Math.random() * 84,
+      d: 1.7 + Math.random() * 1.6,
+      dl: Math.random() * 0.5,
+      r: Math.random() * 720 - 360,
+      k: Math.floor(Math.random() * 3),
+    })));
+    setTimeout(() => setConfetti([]), 4200);
+  };
+
+  const extinguishOne = () => {
+    const current = litRef.current;
+    const idx = current.lastIndexOf(true);
+    if (idx === -1) return false;
+    setLit(prev => prev.map((v, j) => (j === idx ? false : v)));
+    const pid = ++puffId.current;
+    setPuffs(prev => [...prev, { id: pid, side: idx }]);
+    setTimeout(() => setPuffs(prev => prev.filter(p => p.id !== pid)), 1800);
+    if (current.filter(Boolean).length === 1) {
+      setTimeout(() => {
+        setWishMade(true);
+        burstConfetti();
+      }, 700);
+    }
+    return true;
+  };
+
+  // Blow with real breath: listen to the microphone and snuff a candle on each gust.
+  const startMic = async () => {
+    if (micState === "on") return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const ctx = new AudioContext();
+      const src = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 512;
+      analyser.smoothingTimeConstant = 0.55;
+      src.connect(analyser);
+      const data = new Uint8Array(analyser.frequencyBinCount);
+      setMicState("on");
+      setMicHint("Blow at your screen!");
+      const loop = () => {
+        analyser.getByteFrequencyData(data);
+        let sum = 0;
+        for (let i = 0; i < data.length; i++) sum += data[i];
+        const avg = sum / data.length;
+        const now = performance.now();
+        if (avg > 58 && now - lastBlowAt.current > 420) {
+          lastBlowAt.current = now;
+          extinguishOne();
+        }
+        audioRef.current!.raf = requestAnimationFrame(loop);
+      };
+      audioRef.current = { ctx, stream, raf: requestAnimationFrame(loop) };
+    } catch {
+      setMicState("denied");
+      setMicHint("Mic not available — tap the candles instead.");
+    }
+  };
+
+  useEffect(() => () => {
+    const a = audioRef.current;
+    if (a) {
+      cancelAnimationFrame(a.raf);
+      a.stream.getTracks().forEach(t => t.stop());
+      a.ctx.close();
+    }
+  }, []);
+
+  const relight = () => {
+    setWishMade(false);
+    setMicHint("");
+    for (let i = 0; i < CANDLE_COUNT; i++) {
+      setTimeout(() => setLit(prev => prev.map((v, j) => (j === i ? true : v))), 200 + i * 260);
+    }
+  };
+
+  return (
+    <section ref={rootRef} className="section cake-section text-center" aria-label="Birthday cake">
+      <div className="cake-glow" aria-hidden />
+      <div className="cake-confetti" aria-hidden>
+        {confetti.map((c, i) => (
+          <span
+            key={i}
+            className={`confetti-piece confetti-k${c.k}`}
+            style={{
+              left: `${c.l}%`,
+              animationDuration: `${c.d}s`,
+              animationDelay: `${c.dl}s`,
+              rotate: `${c.r}deg`,
+            }}
+          />
+        ))}
+      </div>
+      <div className="cake-stage">
+        <div className="cake-candles" aria-hidden={false}>
+          {lit.map((isLit, i) => (
+            <button
+              key={i}
+              type="button"
+              className={`candle${isLit ? " lit" : ""}`}
+              aria-label={isLit ? "Blow out this candle" : "Candle is out"}
+              onClick={() => { extinguishOne(); }}
+            >
+              <span className="flame" />
+              <span className="flame-halo" />
+              {puffs.filter(p => p.side === i).map(p => (
+                <span key={p.id} className="smoke" style={{ "--i": i } as React.CSSProperties} />
+              ))}
+            </button>
+          ))}
+        </div>
+        <div className="cake-tier cake-tier-top"><span className="cake-dots" /></div>
+        <div className="cake-tier cake-tier-mid"><span className="cake-dots" /></div>
+        <div className="cake-tier cake-tier-base"><span className="cake-dots" /><span className="cake-band" /></div>
+        <div className="cake-plate" />
+        <div className="cake-shadow" aria-hidden />
+      </div>
+      <div className="invitation-divider" aria-hidden><i className="fa-solid fa-leaf" /></div>
+      {!wishMade ? (
+        <div className="cake-cta reveal-on">
+          <p className="eyebrow">MAKE A WISH, THEN BLOW THE CANDLES AWAY</p>
+          <div className="cake-cta-row">
+            <Button asChild variant="outline" className="wed-btn"><button type="button" onClick={startMic}><i className="fa-solid fa-wind" aria-hidden />{micState === "on" ? "Listening…" : "Blow with your breath"}</button></Button>
+            <Button asChild variant="outline" className="wed-btn"><button type="button" onClick={extinguishOne}><i className="fa-solid fa-hand-pointer" aria-hidden />Tap a candle</button></Button>
+          </div>
+          {micHint && <p className="cake-mic-hint">{micHint}</p>}
+        </div>
+      ) : (
+        <div className="cake-wish reveal-on">
+          <i className="fa-solid fa-star cake-wish-star" aria-hidden />
+          <p className="cake-wish-line">Happy Birthday, {INVITATION.name.split(" ")[0]}!</p>
+          <p className="eyebrow">YOUR WISH IS ON ITS WAY</p>
+          <div className="cake-cta-row">
+            <Button asChild variant="outline" className="wed-btn"><button type="button" onClick={relight}><i className="fa-solid fa-fire" aria-hidden />Light them again</button></Button>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function Index() {
   const [revealed, setRevealed] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -85,7 +299,7 @@ function Index() {
       lenis?.start();
     };
     // The invitation must remain reachable even if animation libraries fail to load.
-    const fallbackTimer = setTimeout(finish, 7000);
+    const fallbackTimer = setTimeout(finish, 4500);
     (async () => {
       try {
         const [{ gsap }, { ScrollTrigger }, { default: Lenis }] = await Promise.all([
@@ -104,7 +318,7 @@ function Index() {
         raf = requestAnimationFrame(loop);
         context = gsap.context(() => {
           if (!reduced) {
-            gsap.from(".curtain-rope, .tassel", { opacity: 0, duration: 1.4, stagger: .08, ease: "power3.out" });
+            gsap.from(".curtain-rope, .tassel", { opacity: 0, duration: 0.8, stagger: .05, ease: "power3.out" });
           }
         }, root);
         openingTimer = setTimeout(() => {
@@ -120,17 +334,17 @@ function Index() {
               return;
             }
             // Florals flutter away, valance lifts, panels sweep open, then the curtain melts away.
-            tl.to(".curtain-garland", { y: -26, opacity: 0, scale: .94, duration: .9, ease: "power2.in" }, .2)
-              .to(".curtain-gyp", { y: -34, opacity: 0, scale: .94, duration: .9, ease: "power2.in", stagger: .06 }, .3)
-              .to(".valance-swag", { yPercent: -170, opacity: 0, duration: 1, ease: "power2.in" }, .45)
-              .to(".curtain-valance", { yPercent: -130, opacity: 0, duration: 1.1, ease: "power3.in" }, .5)
-              .to(".curtain-rope, .tassel", { opacity: 0, duration: .5 }, .7)
-              .to(".curtain-left", { xPercent: -106, scaleX: .82, skewY: -6, duration: 2, ease: "power4.inOut" }, .7)
-              .to(".curtain-right", { xPercent: 106, scaleX: .82, skewY: 6, duration: 2, ease: "power4.inOut" }, .7)
-              .to(".wed-main", { opacity: 1, duration: 1.2, ease: "power2.out" }, 1.4)
-              .fromTo(".hero-anim", { opacity: 0, y: 26, rotationX: -18 }, { opacity: 1, y: 0, rotationX: 0, stagger: .1, duration: .95, ease: "power3.out" }, 1.6)
-              .fromTo(".hero-fade", { opacity: 0, scale: 1.12 }, { opacity: 1, scale: 1, duration: 1.5, stagger: .12, ease: "power2.out" }, 1.6)
-              .to(".curtain-wrap", { opacity: 0, duration: .45, ease: "power1.in" }, 2.3);
+            tl.to(".curtain-garland", { y: -22, opacity: 0, scale: .94, duration: .55, ease: "power2.in" }, .05)
+              .to(".curtain-gyp", { y: -28, opacity: 0, scale: .94, duration: .55, ease: "power2.in", stagger: .04 }, .12)
+              .to(".valance-swag", { yPercent: -170, opacity: 0, duration: .6, ease: "power2.in" }, .22)
+              .to(".curtain-valance", { yPercent: -130, opacity: 0, duration: .65, ease: "power3.in" }, .26)
+              .to(".curtain-rope, .tassel", { opacity: 0, duration: .35 }, .35)
+              .to(".curtain-left", { xPercent: -106, scaleX: .82, skewY: -5, duration: 1.05, ease: "power4.inOut" }, .4)
+              .to(".curtain-right", { xPercent: 106, scaleX: .82, skewY: 5, duration: 1.05, ease: "power4.inOut" }, .4)
+              .to(".wed-main", { opacity: 1, duration: .9, ease: "power2.out" }, .75)
+              .fromTo(".hero-anim", { opacity: 0, y: 22, rotationX: -14 }, { opacity: 1, y: 0, rotationX: 0, stagger: .07, duration: .8, ease: "power3.out" }, .85)
+              .fromTo(".hero-fade", { opacity: 0, scale: 1.1 }, { opacity: 1, scale: 1, duration: 1.1, stagger: .09, ease: "power2.out" }, .85)
+              .to(".curtain-wrap", { opacity: 0, duration: .35, ease: "power1.in" }, 1.15);
             gsap.utils.toArray<HTMLElement>(".reveal", root).forEach((el) => {
               gsap.from(el, { opacity: 0, y: 40, duration: 1, ease: "power3.out", scrollTrigger: { trigger: el, start: "top 90%" } });
             });
@@ -159,14 +373,17 @@ function Index() {
     <div ref={rootRef} className="birthday-invitation">
       <div className="floral-bg" aria-hidden />
       <Rain />
+      <Balloons />
       <div className="curtain-wrap" aria-hidden="true">
         <span className="curtain-garland" aria-hidden><img src={gypGarland} width={1920} height={704} alt="" /></span>
-        <div className="curtain-valance"><div className="curtain-trim" /><span className="valance-swag swag-left" /><span className="valance-swag swag-right" /></div>
+        <div className="curtain-valance"><div className="curtain-trim" /><span className="valance-swag swag-left" /><span className="valance-swag swag-center" /><span className="valance-swag swag-right" /></div>
         <div className="curtain-panel curtain-left">
+          <span className="curtain-folds" />
           <span className="curtain-silk" /><span className="curtain-rope" /><span className="tassel" />
           <span className="curtain-gyp" aria-hidden><img src={gypSpray} width={1024} height={1600} alt="" /></span>
         </div>
         <div className="curtain-panel curtain-right">
+          <span className="curtain-folds" />
           <span className="curtain-silk" /><span className="curtain-rope" /><span className="tassel" />
           <span className="curtain-gyp" aria-hidden><img src={gypSpray} width={1024} height={1600} alt="" /></span>
         </div>
@@ -202,6 +419,8 @@ function Index() {
           <p className="birthday-wish-line reveal">with every wish come true.</p>
           <div className="invitation-divider reveal" aria-hidden><i className="fa-solid fa-leaf" /></div>
         </section>
+
+        <Cake />
 
         <section className="section birthday-venue text-center" aria-label="Venue">
           <div className="floral-pair venue-florals" aria-hidden="true">

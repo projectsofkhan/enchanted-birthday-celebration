@@ -5,4 +5,4 @@ export const INVITATION = {
   address: ["Islamnagar Ghasipura", "Bhopal."],
 };
 
-export const OPENING_PAUSE_MS = 1400;
+export const OPENING_PAUSE_MS = 350;
