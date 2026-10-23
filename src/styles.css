@@ -647,3 +647,9 @@ html { scrollbar-color: var(--wed-green) var(--wed-white); scrollbar-width: thin
 @media (max-width: 768px) {
   .swag-center { top: -104px; height: 176px; }
 }
+.cake-gyp { position: absolute; bottom: 10px; width: 108px; z-index: 0; pointer-events: none; }
+.cake-gyp img { width: 100%; height: auto; display: block; opacity: .95; filter: drop-shadow(0 6px 10px color-mix(in oklab, var(--wed-green) 12%, transparent)); animation: garland-sway 6.5s ease-in-out infinite; }
+.cake-gyp-left { left: -64px; transform: rotate(-24deg); transform-origin: bottom left; }
+.cake-gyp-right { right: -64px; transform: rotate(24deg) scaleX(-1); transform-origin: bottom right; }
+.cake-gyp-right img { animation-delay: -3.2s; }
+@media (max-width: 480px) { .cake-gyp { width: 76px; } .cake-gyp-left { left: -40px; } .cake-gyp-right { right: -40px; } }

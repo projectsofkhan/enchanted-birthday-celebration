@@ -223,6 +223,8 @@ function Cake() {
         ))}
       </div>
       <div className="cake-stage">
+        <span className="cake-gyp cake-gyp-left" aria-hidden><img src={gypSpray} width={1024} height={1600} alt="" /></span>
+        <span className="cake-gyp cake-gyp-right" aria-hidden><img src={gypSpray} width={1024} height={1600} alt="" /></span>
         <div className="cake-candles" aria-hidden={false}>
           {lit.map((isLit, i) => (
             <button
