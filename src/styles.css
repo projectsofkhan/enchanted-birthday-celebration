@@ -456,7 +456,7 @@ html { scrollbar-color: var(--wed-green) var(--wed-white); scrollbar-width: thin
   .petal, .gyp-dot { display: none; }
 }
 @media print {
-  .curtain-wrap, .petal, .gyp-dot, .floral-bg, .venue-map { display: none !important; }
+  .curtain-wrap, .petal, .gyp-dot, .floral-bg, .venue-map, .balloon-sky, .cake-confetti, .cake-cta, .cake-wish { display: none !important; }
   .wed-main { opacity: 1 !important; }
   .hero-anim, .reveal, .hero-fade { opacity: 1 !important; transform: none !important; }
   .section { break-inside: avoid; }
